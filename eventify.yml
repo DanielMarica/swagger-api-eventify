@@ -1,0 +1,745 @@
+openapi: 3.0.3
+info:
+  title: Eventify API
+  description: API de gestion d'événements, réservations et notifications pour la plateforme Eventify
+  version: 1.0.0
+  contact:
+    email: contact@eventify.com
+
+servers:
+  - url: https://api.eventify.com
+    description: Serveur de production
+  - url: https://staging-api.eventify.com
+    description: Serveur de staging
+
+tags:
+  - name: Users
+    description: Gestion des utilisateurs et authentification
+  - name: Events
+    description: Gestion des événements
+  - name: Reservations
+    description: Gestion des réservations et billetterie
+  - name: Payments
+    description: Gestion des paiements et transactions
+  - name: Notifications
+    description: Gestion des notifications et promotions
+
+paths:
+  /api/users/register:
+    post:
+      tags:
+        - Users
+      summary: Créer un compte utilisateur
+      description: Inscription d'un nouvel utilisateur sur la plateforme
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - firstName
+                - lastName
+                - email
+                - password
+                - phone
+                - birthDate
+              properties:
+                firstName:
+                  type: string
+                  example: Keyvan
+                lastName:
+                  type: string
+                  example: Nikazm
+                email:
+                  type: string
+                  format: email
+                  example: keyvan.nikazm@gmail.com
+                password:
+                  type: string
+                  format: password
+                  example: ehelf56DG
+                phone:
+                  type: string
+                  example: "0471050505"
+                birthDate:
+                  type: string
+                  format: date
+                  example: "22-03-2001"
+      responses:
+        '201':
+          description: Compte créé avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 1
+                  firstName:
+                    type: string
+                    example: Keyvan
+                  lastName:
+                    type: string
+                    example: Nikazm
+                  email:
+                    type: string
+                    example: keyvan.nikazm@gmail.com
+                  phone:
+                    type: string
+                    example: "0471050505"
+                  birthDate:
+                    type: string
+                    example: "22-03-2001"
+                  createdAt:
+                    type: string
+                    example: "19-11-2025"
+        '400':
+          description: Données invalides
+        '409':
+          description: Email déjà existant
+
+  /api/users/login:
+    post:
+      tags:
+        - Users
+      summary: Connexion utilisateur
+      description: Authentification d'un utilisateur existant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: keyvan.nikazm@gmail.com
+                password:
+                  type: string
+                  format: password
+                  example: ehelf56DG
+      responses:
+        '200':
+          description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      firstName:
+                        type: string
+                        example: Keyvan
+                      lastName:
+                        type: string
+                        example: Nikazm
+                      email:
+                        type: string
+                        example: keyvan.nikazm@gmail.com
+        '401':
+          description: Identifiants incorrects
+
+  /api/users/logout:
+    post:
+      tags:
+        - Users
+      summary: Déconnexion utilisateur
+      description: Déconnexion de l'utilisateur actuellement connecté
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Déconnexion réussie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: l'utilisateur n'est plus connecté
+
+  /api/users/me:
+    get:
+      tags:
+        - Users
+      summary: Obtenir le profil de l'utilisateur connecté
+      description: Récupère les informations du profil utilisateur
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profil récupéré avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 1
+                  firstName:
+                    type: string
+                    example: Keyvan
+                  lastName:
+                    type: string
+                    example: Nikazm
+                  email:
+                    type: string
+                    example: keyvan.nikazm@gmail.com
+                  phone:
+                    type: string
+                    example: "0471050505"
+                  birthDate:
+                    type: string
+                    example: "22-03-2001"
+                  createdAt:
+                    type: string
+                    example: "19-11-2025"
+        '401':
+          description: Non autorisé
+    put:
+      tags:
+        - Users
+      summary: Mettre à jour le profil utilisateur
+      description: Modification des informations du profil
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                  example: Keyvan
+                lastName:
+                  type: string
+                  example: Nikazm
+                phone:
+                  type: string
+                  example: "471060606"
+                birthDate:
+                  type: string
+                  example: "22-03-2001"
+      responses:
+        '200':
+          description: Profil mis à jour
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 1
+                  firstName:
+                    type: string
+                    example: Keyvan
+                  lastName:
+                    type: string
+                    example: Nikazm
+                  phone:
+                    type: string
+                    example: "471060606"
+                  birthDate:
+                    type: string
+                    example: "22-03-2001"
+        '400':
+          description: Données invalides
+        '401':
+          description: Non autorisé
+    delete:
+      tags:
+        - Users
+      summary: Supprimer le compte utilisateur
+      description: Suppression définitive du compte
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Compte supprimé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: le user a bien été supprimé
+        '401':
+          description: Non autorisé
+        '404':
+          description: Utilisateur non trouvé
+
+  /api/users/password:
+    put:
+      tags:
+        - Users
+      summary: Modifier le mot de passe utilisateur
+      description: Changement du mot de passe
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - oldPassword
+                - newPassword
+              properties:
+                oldPassword:
+                  type: string
+                  format: password
+                  example: ehelf56DG
+                newPassword:
+                  type: string
+                  format: password
+                  example: eHDHken56
+      responses:
+        '200':
+          description: Mot de passe modifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: le changement de mot de passe a fonctionné
+        '400':
+          description: Requête invalide
+        '401':
+          description: Non autorisé
+
+  /api/events:
+    get:
+      tags:
+        - Events
+      summary: Obtenir la liste de tous les événements
+      description: Retourne tous les événements disponibles
+      responses:
+        '200':
+          description: Liste des événements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 1
+                    title:
+                      type: string
+                      example: Tomorrowland
+                    date:
+                      type: string
+                      example: "25-11-2026"
+                    location:
+                      type: string
+                      example: De Schorre, Boom, Antwerp, Belgium
+        '400':
+          description: Requête invalide
+        '404':
+          description: Aucun événement trouvé
+    post:
+      tags:
+        - Events
+      summary: Créer un nouvel événement
+      description: Permet de créer un événement
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - date
+                - capacity
+              properties:
+                title:
+                  type: string
+                  example: ElectroWave Festival
+                date:
+                  type: string
+                  example: "14-10-2026"
+                capacity:
+                  type: integer
+                  example: 10000
+      responses:
+        '201':
+          description: Événement créé
+        '400':
+          description: Données invalides
+
+  /api/events/{id}:
+    get:
+      tags:
+        - Events
+      summary: Obtenir les détails d'un événement
+      description: Retourne les informations détaillées d'un événement spécifique
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID de l'événement
+      responses:
+        '200':
+          description: Détails de l'événement
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 1
+                  title:
+                    type: string
+                    example: Tomorrowland
+                  description:
+                    type: string
+                    example: Tomorrowland est un grand festival de musique électronique organisé chaque été à Boom, en Belgique.
+        '400':
+          description: Requête invalide
+        '404':
+          description: Événement non trouvé
+
+  /api/reservations:
+    post:
+      tags:
+        - Reservations
+      summary: Créer une réservation
+      description: Permet de réserver des places pour un événement
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+                - eventId
+                - quantity
+              properties:
+                userId:
+                  type: integer
+                  example: 1
+                eventId:
+                  type: integer
+                  example: 1
+                quantity:
+                  type: integer
+                  example: 2
+      responses:
+        '201':
+          description: Réservation créée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reservationId:
+                    type: integer
+                    example: 1
+                  status:
+                    type: string
+                    example: PENDING
+        '400':
+          description: Données invalides
+        '409':
+          description: Conflit (places indisponibles)
+
+  /api/reservations/{id}:
+    get:
+      tags:
+        - Reservations
+      summary: Obtenir les détails d'une réservation
+      description: Retourne les informations d'une réservation spécifique
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID de la réservation
+      responses:
+        '200':
+          description: Détails de la réservation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reservationId:
+                    type: integer
+                    example: 1
+                  status:
+                    type: string
+                    example: PENDING
+        '404':
+          description: Réservation non trouvée
+
+  /api/payments:
+    post:
+      tags:
+        - Payments
+      summary: Initier un paiement
+      description: Démarre le processus de paiement pour une réservation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reservationId
+                - amount
+                - method
+              properties:
+                reservationId:
+                  type: integer
+                  example: 1
+                amount:
+                  type: number
+                  format: float
+                  example: 500.0
+                method:
+                  type: string
+                  example: card
+      responses:
+        '201':
+          description: Paiement initié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  paymentId:
+                    type: integer
+                    example: 1
+                  status:
+                    type: string
+                    example: IN_PROGRESS
+        '400':
+          description: Données invalides
+
+  /api/payments/{id}:
+    get:
+      tags:
+        - Payments
+      summary: Obtenir le statut d'un paiement
+      description: Retourne l'état actuel d'un paiement
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID du paiement
+      responses:
+        '200':
+          description: Statut du paiement
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  paymentId:
+                    type: integer
+                    example: 1
+                  status:
+                    type: string
+                    example: IN_PROGRESS
+        '404':
+          description: Paiement non trouvé
+
+  /api/notifications:
+    post:
+      tags:
+        - Notifications
+      summary: Créer et envoyer une notification
+      description: Envoie une notification à un ou plusieurs utilisateurs
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - to
+                - subject
+                - body
+              properties:
+                type:
+                  type: string
+                  example: email
+                to:
+                  type: array
+                  items:
+                    type: string
+                  example: ["keyvan.nikazm@gmail.com", "ethan.vandenberghen@gmail.com"]
+                subject:
+                  type: string
+                  example: Votre réservation est confirmée
+                body:
+                  type: string
+                  example: Merci pour votre achat !
+      responses:
+        '201':
+          description: Notification créée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 1
+                  email:
+                    type: string
+                    example: ethan.vandenberghen@gmail.com
+                  createdAt:
+                    type: string
+                    example: "05-02-2026"
+        '400':
+          description: Données invalides
+        '409':
+          description: Conflit
+
+  /api/notifications/{id}:
+    get:
+      tags:
+        - Notifications
+      summary: Récupérer le statut d'une notification
+      description: Obtient les détails d'une notification existante
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID de la notification
+      responses:
+        '200':
+          description: Statut de la notification
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notificationId:
+                    type: integer
+                    example: 12
+                  type:
+                    type: string
+                    example: email
+                  to:
+                    type: array
+                    items:
+                      type: string
+                    example: ["keyvan.nikazm@gmail.com"]
+                  status:
+                    type: string
+                    example: SENT
+                  sentAt:
+                    type: string
+                    example: "12-12-2025"
+        '401':
+          description: Non autorisé
+
+  /api/notifications/promotions:
+    post:
+      tags:
+        - Notifications
+      summary: Envoyer une campagne promotionnelle
+      description: Envoie une promotion à plusieurs utilisateurs
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - message
+                - recipients
+              properties:
+                title:
+                  type: string
+                  example: Offre spéciale !
+                message:
+                  type: string
+                  example: Bénéficiez de -20% sur votre prochain événement.
+                recipients:
+                  type: array
+                  items:
+                    type: string
+                  example: ["promotions.evenement@gmail.com", "keyvan.nikazm@gmail.com"]
+      responses:
+        '201':
+          description: Campagne créée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  campaignId:
+                    type: integer
+                    example: 5
+                  status:
+                    type: string
+                    example: IN_QUEUE
+                  recipientsCount:
+                    type: integer
+                    example: 2
+        '400':
+          description: Données invalides
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Authentification via token JWT (Bearer)
