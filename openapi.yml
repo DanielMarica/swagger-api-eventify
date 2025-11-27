@@ -30,7 +30,7 @@ paths:
       tags:
         - Users
       summary: Créer un compte utilisateur
-      description: Inscription d'un nouvel utilisateur sur la plateforme
+      description: Inscription d'un nouvel utilisateur sur la plateforme avec son adresse
       requestBody:
         required: true
         content:
@@ -66,6 +66,23 @@ paths:
                   type: string
                   format: date
                   example: "22-03-2001"
+                # --- AJOUT DE L'ADRESSE (INPUT) ---
+                address:
+                  type: object
+                  description: Adresse postale de l'utilisateur
+                  properties:
+                    street:
+                      type: string
+                      example: "Rue de la Loi 16"
+                    city:
+                      type: string
+                      example: "Bruxelles"
+                    zipCode:
+                      type: string
+                      example: "1000"
+                    country:
+                      type: string
+                      example: "Belgique"
       responses:
         '201':
           description: Compte créé avec succès
@@ -95,11 +112,116 @@ paths:
                   createdAt:
                     type: string
                     example: "19-11-2025"
+                  # --- RETOUR DE L'ADRESSE (OUTPUT) ---
+                  address:
+                    type: object
+                    properties:
+                      street:
+                        type: string
+                        example: "Rue de la Loi 16"
+                      city:
+                        type: string
+                        example: "Bruxelles"
+                      zipCode:
+                        type: string
+                        example: "1000"
+                      country:
+                        type: string
+                        example: "Belgique"
         '400':
           description: Données invalides
         '409':
           description: Email déjà existant
-
+    put:
+      tags:
+        - Users
+      summary: Mettre à jour le profil utilisateur
+      description: Modification des informations du profil et de l'adresse
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                  example: Keyvan
+                lastName:
+                  type: string
+                  example: Nikazm
+                phone:
+                  type: string
+                  example: "0471060606"
+                birthDate:
+                  type: string
+                  format: date
+                  example: "22-03-2001"
+                # --- AJOUT : L'objet adresse modifiable ---
+                address:
+                  type: object
+                  description: Nouvelle adresse de l'utilisateur
+                  properties:
+                    street:
+                      type: string
+                      example: "Avenue Louise 50"
+                    city:
+                      type: string
+                      example: "Bruxelles"
+                    zipCode:
+                      type: string
+                      example: "1050"
+                    country:
+                      type: string
+                      example: "Belgique"
+      responses:
+        '200':
+          description: Profil mis à jour
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 1
+                  firstName:
+                    type: string
+                    example: Keyvan
+                  lastName:
+                    type: string
+                    example: Nikazm
+                  email:
+                    type: string
+                    example: keyvan.nikazm@gmail.com
+                  phone:
+                    type: string
+                    example: "0471060606"
+                  birthDate:
+                    type: string
+                    example: "22-03-2001"
+                  # --- RETOUR : L'adresse mise à jour ---
+                  address:
+                    type: object
+                    properties:
+                      street:
+                        type: string
+                        example: "Avenue Louise 50"
+                      city:
+                        type: string
+                        example: "Bruxelles"
+                      zipCode:
+                        type: string
+                        example: "1050"
+                      country:
+                        type: string
+                        example: "Belgique"
+        '400':
+          description: Données invalides
+        '401':
+          description: Non autorisé
   /api/users/login:
     post:
       tags:
@@ -178,7 +300,6 @@ paths:
       tags:
         - Users
       summary: Obtenir le profil de l'utilisateur connecté
-      description: Récupère les informations du profil utilisateur
       security:
         - bearerAuth: []
       responses:
@@ -201,22 +322,32 @@ paths:
                   email:
                     type: string
                     example: keyvan.nikazm@gmail.com
-                  phone:
-                    type: string
-                    example: "0471050505"
-                  birthDate:
-                    type: string
-                    example: "22-03-2001"
-                  createdAt:
-                    type: string
-                    example: "19-11-2025"
+                  # --- AJOUT DE L'ADRESSE DANS LA REPONSE ---
+                  address:
+                    type: object
+                    properties:
+                      street:
+                        type: string
+                        example: "Rue de la Loi 16"
+                      city:
+                        type: string
+                        example: "Bruxelles"
+                      zipCode:
+                        type: string
+                        example: "1000"
+                      country:
+                        type: string
+                        example: "Belgique"
         '401':
           description: Non autorisé
+    /api/users/me:
+    # (Laisser la partie 'get' au-dessus telle quelle)
+    
     put:
       tags:
         - Users
       summary: Mettre à jour le profil utilisateur
-      description: Modification des informations du profil
+      description: Modification des informations du profil et de l'adresse
       security:
         - bearerAuth: []
       requestBody:
@@ -234,10 +365,28 @@ paths:
                   example: Nikazm
                 phone:
                   type: string
-                  example: "471060606"
+                  example: "0471060606"
                 birthDate:
                   type: string
+                  format: date
                   example: "22-03-2001"
+                # --- AJOUT : L'objet adresse modifiable ---
+                address:
+                  type: object
+                  description: Nouvelle adresse de l'utilisateur
+                  properties:
+                    street:
+                      type: string
+                      example: "Avenue Louise 50"
+                    city:
+                      type: string
+                      example: "Bruxelles"
+                    zipCode:
+                      type: string
+                      example: "1050"
+                    country:
+                      type: string
+                      example: "Belgique"
       responses:
         '200':
           description: Profil mis à jour
@@ -255,12 +404,31 @@ paths:
                   lastName:
                     type: string
                     example: Nikazm
+                  email:
+                    type: string
+                    example: keyvan.nikazm@gmail.com
                   phone:
                     type: string
-                    example: "471060606"
+                    example: "0471060606"
                   birthDate:
                     type: string
                     example: "22-03-2001"
+                  # --- RETOUR : L'adresse mise à jour ---
+                  address:
+                    type: object
+                    properties:
+                      street:
+                        type: string
+                        example: "Avenue Louise 50"
+                      city:
+                        type: string
+                        example: "Bruxelles"
+                      zipCode:
+                        type: string
+                        example: "1050"
+                      country:
+                        type: string
+                        example: "Belgique"
         '400':
           description: Données invalides
         '401':
