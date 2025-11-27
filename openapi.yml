@@ -4,7 +4,7 @@ info:
   description: API de gestion d'événements, réservations et notifications pour la plateforme Eventify
   version: 1.0.0
   contact:
-    email: contact@eventify.com
+    email: livius.marica@student.vinci.be
 
 servers:
   - url: https://api.eventify.com
