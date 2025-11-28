@@ -19,12 +19,17 @@ tags:
     description: Gestion des événements
   - name: Reservations
     description: Gestion des réservations et billetterie
-  - name: Payments
-    description: Gestion des paiements et transactions
+  - name: Transaction
+    description: Gestion des transactions
   - name: Notifications
     description: Gestion des notifications et promotions
+  - name: Resale
+    description: Gestion des tickets
+  - name: Dashboard Service 
+    description : dashboard gestion 
 
 paths:
+  # ------------------------- USERS -------------------------
   /api/users/register:
     post:
       tags:
@@ -66,7 +71,6 @@ paths:
                   type: string
                   format: date
                   example: "22-03-2001"
-                # --- AJOUT DE L'ADRESSE (INPUT) ---
                 address:
                   type: object
                   description: Adresse postale de l'utilisateur
@@ -112,10 +116,12 @@ paths:
                   createdAt:
                     type: string
                     example: "19-11-2025"
-                  # --- RETOUR DE L'ADRESSE (OUTPUT) ---
                   address:
                     type: object
                     properties:
+                      id:
+                        type: integer
+                        example: 1
                       street:
                         type: string
                         example: "Rue de la Loi 16"
@@ -132,96 +138,7 @@ paths:
           description: Données invalides
         '409':
           description: Email déjà existant
-    put:
-      tags:
-        - Users
-      summary: Mettre à jour le profil utilisateur
-      description: Modification des informations du profil et de l'adresse
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                firstName:
-                  type: string
-                  example: Keyvan
-                lastName:
-                  type: string
-                  example: Nikazm
-                phone:
-                  type: string
-                  example: "0471060606"
-                birthDate:
-                  type: string
-                  format: date
-                  example: "22-03-2001"
-                # --- AJOUT : L'objet adresse modifiable ---
-                address:
-                  type: object
-                  description: Nouvelle adresse de l'utilisateur
-                  properties:
-                    street:
-                      type: string
-                      example: "Avenue Louise 50"
-                    city:
-                      type: string
-                      example: "Bruxelles"
-                    zipCode:
-                      type: string
-                      example: "1050"
-                    country:
-                      type: string
-                      example: "Belgique"
-      responses:
-        '200':
-          description: Profil mis à jour
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                    example: 1
-                  firstName:
-                    type: string
-                    example: Keyvan
-                  lastName:
-                    type: string
-                    example: Nikazm
-                  email:
-                    type: string
-                    example: keyvan.nikazm@gmail.com
-                  phone:
-                    type: string
-                    example: "0471060606"
-                  birthDate:
-                    type: string
-                    example: "22-03-2001"
-                  # --- RETOUR : L'adresse mise à jour ---
-                  address:
-                    type: object
-                    properties:
-                      street:
-                        type: string
-                        example: "Avenue Louise 50"
-                      city:
-                        type: string
-                        example: "Bruxelles"
-                      zipCode:
-                        type: string
-                        example: "1050"
-                      country:
-                        type: string
-                        example: "Belgique"
-        '400':
-          description: Données invalides
-        '401':
-          description: Non autorisé
+    
   /api/users/login:
     post:
       tags:
@@ -322,10 +239,12 @@ paths:
                   email:
                     type: string
                     example: keyvan.nikazm@gmail.com
-                  # --- AJOUT DE L'ADRESSE DANS LA REPONSE ---
                   address:
                     type: object
                     properties:
+                      id:
+                        type: integer
+                        example: 1
                       street:
                         type: string
                         example: "Rue de la Loi 16"
@@ -340,8 +259,6 @@ paths:
                         example: "Belgique"
         '401':
           description: Non autorisé
-    /api/users/me:
-    # (Laisser la partie 'get' au-dessus telle quelle)
     
     put:
       tags:
@@ -370,7 +287,6 @@ paths:
                   type: string
                   format: date
                   example: "22-03-2001"
-                # --- AJOUT : L'objet adresse modifiable ---
                 address:
                   type: object
                   description: Nouvelle adresse de l'utilisateur
@@ -413,10 +329,12 @@ paths:
                   birthDate:
                     type: string
                     example: "22-03-2001"
-                  # --- RETOUR : L'adresse mise à jour ---
                   address:
                     type: object
                     properties:
+                      id:
+                        type: integer
+                        example: 1
                       street:
                         type: string
                         example: "Avenue Louise 50"
@@ -433,6 +351,7 @@ paths:
           description: Données invalides
         '401':
           description: Non autorisé
+
     delete:
       tags:
         - Users
@@ -498,15 +417,33 @@ paths:
         '401':
           description: Non autorisé
 
+  # ------------------------- EVENTS -------------------------
   /api/events:
     get:
       tags:
         - Events
-      summary: Obtenir la liste de tous les événements
-      description: Retourne tous les événements disponibles
+      summary: Afficher et rechercher les événements
+      description: Retourne la liste complète avec les détails de la salle et de la catégorie.
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Recherche textuelle dans le titre
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filtrer par date de début
+        - name: availableOnly
+          in: query
+          schema:
+            type: boolean
+          description: Si true, retourne uniquement les événements disponibles
       responses:
         '200':
-          description: Liste des événements
+          description: Liste des événements trouvés
           content:
             application/json:
               schema:
@@ -515,26 +452,64 @@ paths:
                   type: object
                   properties:
                     id:
-                      type: integer
-                      example: 1
+                      type: string
+                      format: uuid
+                      description: PK de l'événement
                     title:
                       type: string
-                      example: Tomorrowland
-                    date:
+                      example: "Summer Festival"
+                    description:
                       type: string
-                      example: "25-11-2026"
-                    location:
+                      example: "Un festival incroyable..."
+                    startDate:
                       type: string
-                      example: De Schorre, Boom, Antwerp, Belgium
+                      format: date-time
+                      description: Table EVENTS (start_date)
+                    endDate:
+                      type: string
+                      format: date-time
+                      description: Table EVENTS (end_date)
+                    status:
+                      type: string
+                      enum: [DRAFT, PUBLISHED, CANCELLED]
+                      example: PUBLISHED
+                    isAvailable:
+                      type: boolean
+                      description: Table EVENTS (is_available)
+                    venue:
+                      type: object
+                      description: Détails provenant de la table VENUES
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                          example: "Zénith de Paris"
+                        capacity:
+                          type: integer
+                          description: Table VENUES (capacity)
+                          example: 6000
+                    category:
+                      type: object
+                      description: Détails provenant de la table CATEGORIES
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                          description: Table CATEGORIES (name)
+                          example: "Concert"
         '400':
-          description: Requête invalide
-        '404':
-          description: Aucun événement trouvé
+          description: Paramètres de requête invalides
+        '500':
+          description: Erreur serveur
     post:
       tags:
         - Events
-      summary: Créer un nouvel événement
-      description: Permet de créer un événement
+      summary: Créer un évènement
+      description: Processus inclus - Créer un évènement avec les informations de salle et catégorie.
       security:
         - bearerAuth: []
       requestBody:
@@ -545,65 +520,585 @@ paths:
               type: object
               required:
                 - title
-                - date
-                - capacity
+                - startDate
+                - endDate
+                - venue
+                - category
               properties:
                 title:
                   type: string
-                  example: ElectroWave Festival
-                date:
+                  example: "Electro Night"
+                description:
                   type: string
-                  example: "14-10-2026"
-                capacity:
-                  type: integer
-                  example: 10000
+                  example: "Une soirée inoubliable..."
+                startDate:
+                  type: string
+                  format: date-time
+                  example: "2026-11-27T20:00:00Z"
+                endDate:
+                  type: string
+                  format: date-time
+                  example: "2026-11-28T02:00:00Z"
+                status:
+                  type: string
+                  enum: [DRAFT, PUBLISHED, CANCELLED]
+                  default: DRAFT
+                isAvailable:
+                  type: boolean
+                  description: Indique si l'événement est disponible à la réservation
+                  default: false
+                  example: true
+                venue:
+                  type: object
+                  required:
+                    - name
+                    - capacity
+                  properties:
+                    name:
+                      type: string
+                      example: "Zénith de Paris"
+                    capacity:
+                      type: integer
+                      example: 6000
+                category:
+                  type: object
+                  required:
+                    - name
+                  properties:
+                    name:
+                      type: string
+                      example: "Musique"
       responses:
         '201':
-          description: Événement créé
-        '400':
-          description: Données invalides
-
-  /api/events/{id}:
-    get:
-      tags:
-        - Events
-      summary: Obtenir les détails d'un événement
-      description: Retourne les informations détaillées d'un événement spécifique
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          description: ID de l'événement
-      responses:
-        '200':
-          description: Détails de l'événement
+          description: Événement créé avec succès
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   id:
-                    type: integer
-                    example: 1
+                    type: string
+                    format: uuid
+                    example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
                   title:
                     type: string
-                    example: Tomorrowland
+                    example: "Electro Night"
                   description:
                     type: string
-                    example: Tomorrowland est un grand festival de musique électronique organisé chaque été à Boom, en Belgique.
+                    example: "Une soirée inoubliable..."
+                  startDate:
+                    type: string
+                    format: date-time
+                    example: "2026-11-27T20:00:00Z"
+                  endDate:
+                    type: string
+                    format: date-time
+                    example: "2026-11-28T02:00:00Z"
+                  status:
+                    type: string
+                    enum: [DRAFT, PUBLISHED, CANCELLED]
+                    example: "DRAFT"
+                  isAvailable:
+                    type: boolean
+                    example: true
+                  venue:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                      name:
+                        type: string
+                        example: "Zénith de Paris"
+                      capacity:
+                        type: integer
+                        example: 6000
+                  category:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                      name:
+                        type: string
+                        example: "Musique"
         '400':
-          description: Requête invalide
+          description: Données invalides (dates incohérentes, IDs manquants)
+
+  /api/events/{id}:
+    get:
+      tags:
+        - Events
+      summary: Obtenir les détails d'un événement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Détails complets de l'événement (Table EVENTS)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  title:
+                    type: string
+                    example: "Summer Festival"
+                  description:
+                    type: string
+                    example: "Un festival incroyable..."
+                  startDate:
+                    type: string
+                    format: date-time
+                  endDate:
+                    type: string
+                    format: date-time
+                  status:
+                    type: string
+                    enum: [DRAFT, PUBLISHED, CANCELLED]
+                  isAvailable:
+                    type: boolean
+                  venue:
+                    type: object
+                    description: Détails complets de la salle
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      name:
+                        type: string
+                        example: "Zénith de Paris"
+                      capacity:
+                        type: integer
+                        example: 6000
+                  category:
+                    type: object
+                    description: Détails complets de la catégorie
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      name:
+                        type: string
+                        example: "Concert"
         '404':
           description: Événement non trouvé
 
+    put:
+      tags:
+        - Events
+      summary: Modifier un évènement
+      description: Processus inclus - Modifier un évènement. Met à jour les infos générales.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Electro Night Updated"
+                description:
+                  type: string
+                  example: "Une soirée encore plus incroyable..."
+                startDate:
+                  type: string
+                  format: date-time
+                endDate:
+                  type: string
+                  format: date-time
+                venue:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      example: "Zénith de Paris"
+                    capacity:
+                      type: integer
+                      example: 6000
+                category:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      example: "Musique"
+                status:
+                  type: string
+                  enum: [DRAFT, PUBLISHED, CANCELLED]
+                isAvailable:
+                  type: boolean
+      responses:
+        '200':
+          description: Événement mis à jour
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  title:
+                    type: string
+                    example: "Electro Night Updated"
+                  description:
+                    type: string
+                    example: "Une soirée encore plus incroyable..."
+                  startDate:
+                    type: string
+                    format: date-time
+                  endDate:
+                    type: string
+                    format: date-time
+                  status:
+                    type: string
+                    enum: [DRAFT, PUBLISHED, CANCELLED]
+                  isAvailable:
+                    type: boolean
+                  venue:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      name:
+                        type: string
+                        example: "Zénith de Paris"
+                      capacity:
+                        type: integer
+                        example: 6000
+                  category:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      name:
+                        type: string
+                        example: "Musique"
+        '404':
+          description: Événement non trouvé
+
+    delete:
+      tags:
+        - Events
+      summary: Supprimer un évènement
+      description: Processus inclus - Supprimer un évènement.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Événement supprimé avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                  message:
+                    type: string
+                    example: "event deleted"
+        '404':
+          description: Événement non trouvé
+
+  /api/events/{id}/availability:
+    patch:
+      tags:
+        - Events
+      summary: Rendre disponible / indisponible
+      description: Processus inclus - Rendre disponible / indisponible un évènement (Champ is_available).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - isAvailable
+              properties:
+                isAvailable:
+                  type: boolean
+                  description: true = Disponible, false = Indisponible
+                  example: true
+      responses:
+        '200':
+          description: Statut de disponibilité mis à jour
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  isAvailable:
+                    type: boolean
+
+  /api/events/{eventId}/available-seats:
+    get:
+      tags:
+        - Events
+      summary: Afficher les places disponibles
+      description: Récupère la liste des sièges disponibles pour un événement spécifique
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Liste des places disponibles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  eventId:
+                    type: string
+                    format: uuid
+                    example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                  eventTitle:
+                    type: string
+                    example: "Summer Festival"
+                  totalCapacity:
+                    type: integer
+                    example: 6000
+                  availableSeats:
+                    type: integer
+                    example: 1750
+                  reservedSeats:
+                    type: integer
+                    example: 4250
+                  seatsByType:
+                    type: array
+                    description: Détails des places disponibles par type de ticket
+                    items:
+                      type: object
+                      properties:
+                        ticketType:
+                          type: string
+                          enum: [VIP, NORMAL, GOLD, EARLY_BIRD]
+                          example: "VIP"
+                        price:
+                          type: number
+                          format: decimal
+                          example: 120.00
+                        totalSeats:
+                          type: integer
+                          example: 500
+                        availableSeats:
+                          type: integer
+                          example: 120
+                        specificSeats:
+                          type: array
+                          nullable: true
+                          description: Liste des numéros de sièges disponibles (NULL si placement libre)
+                          items:
+                            type: string
+                          example: ["A12", "A13", "B5", "B6"]
+        '404':
+          description: Événement non trouvé
+        '500':
+          description: Erreur serveur
+
+  /api/events/{eventId}/seating-plan:
+    get:
+      tags:
+        - Events
+      summary: Voir le plan de la salle
+      description: Récupère le plan complet de la salle avec l'état de chaque siège (disponible/réservé)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Plan de la salle avec l'état des sièges
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  eventId:
+                    type: string
+                    format: uuid
+                    example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                  eventTitle:
+                    type: string
+                    example: "Summer Festival"
+                  venueName:
+                    type: string
+                    example: "Zénith de Paris"
+                  seatingType:
+                    type: string
+                    enum: [ASSIGNED, FREE]
+                    example: ASSIGNED
+                    description: Type de placement - ASSIGNED (numéroté) ou FREE (libre)
+                  sections:
+                    type: array
+                    description: Sections de la salle
+                    items:
+                      type: object
+                      properties:
+                        sectionName:
+                          type: string
+                          example: "Section A"
+                        rows:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              rowName:
+                                type: string
+                                example: "Row 1"
+                              seats:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    seatNumber:
+                                      type: string
+                                      example: "A12"
+                                    status:
+                                      type: string
+                                      enum: [AVAILABLE, RESERVED, BLOCKED]
+                                      example: AVAILABLE
+                                    ticketType:
+                                      type: string
+                                      enum: [VIP, NORMAL, GOLD, EARLY_BIRD]
+                                      example: "VIP"
+                                    price:
+                                      type: number
+                                      format: decimal
+                                      example: 75.00
+        '404':
+          description: Événement non trouvé
+        '500':
+          description: Erreur serveur
+
+  # ------------------------- RESERVATIONS -------------------------
   /api/reservations:
+    get:
+      tags:
+        - Reservations
+      summary: Consulter ses réservations
+      description: Liste complète des réservations de l'utilisateur connecté avec les détails des sièges
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDING, CONFIRMED, CANCELLED]
+          description: Filtrer par statut de réservation
+      responses:
+        '200':
+          description: Liste des réservations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                      example: "a1b2c3d4-5678-90ab-cdef-123456789012"
+                    userId:
+                      type: string
+                      format: uuid
+                      example: "user-uuid-123"
+                    eventId:
+                      type: string
+                      format: uuid
+                      example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    eventTitle:
+                      type: string
+                      example: "Summer Festival"
+                    status:
+                      type: string
+                      enum: [PENDING, CONFIRMED, CANCELLED]
+                      example: CONFIRMED
+                    totalAmount:
+                      type: number
+                      format: decimal
+                      example: 150.50
+                    createdAt:
+                      type: string
+                      format: date-time
+                      example: "2025-11-20T10:00:00Z"
+                    reservedSeats:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                          ticketType:
+                            type: string
+                            enum: [VIP, NORMAL, GOLD, EARLY_BIRD]
+                            example: "VIP"
+                          seatNumber:
+                            type: string
+                            nullable: true
+                            example: "A12"
+                            description: Numéro de siège ou NULL si placement libre
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+        '500':
+          description: Erreur serveur
+    
     post:
       tags:
         - Reservations
-      summary: Créer une réservation
-      description: Permet de réserver des places pour un événement
+      summary: Effectuer une réservation
+      description: Créer une nouvelle réservation pour un événement avec sélection des sièges
       security:
         - bearerAuth: []
       requestBody:
@@ -613,44 +1108,112 @@ paths:
             schema:
               type: object
               required:
-                - userId
                 - eventId
-                - quantity
+                - status
+                - totalAmount
+                - reservedSeats
               properties:
-                userId:
-                  type: integer
-                  example: 1
                 eventId:
-                  type: integer
-                  example: 1
-                quantity:
-                  type: integer
-                  example: 2
+                  type: string
+                  format: uuid
+                  example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                status:
+                  type: string
+                  enum: [PENDING, CONFIRMED, CANCELLED]
+                  default: PENDING
+                  example: "PENDING"
+                  description: Statut initial de la réservation
+                totalAmount:
+                  type: number
+                  format: decimal
+                  example: 150.50
+                  description: Montant total de la réservation
+                reservedSeats:
+                  type: array
+                  description: Liste des sièges à réserver (sans les IDs)
+                  items:
+                    type: object
+                    required:
+                      - ticketType
+                    properties:
+                      ticketType:
+                        type: string
+                        enum: [VIP, NORMAL, GOLD, EARLY_BIRD]
+                        example: "VIP"
+                        description: Type de ticket
+                      seatNumber:
+                        type: string
+                        nullable: true
+                        example: "A12"
+                        description: Numéro de siège spécifique ou NULL pour placement libre
       responses:
         '201':
-          description: Réservation créée
+          description: Réservation créée avec succès
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  reservationId:
-                    type: integer
-                    example: 1
+                  id:
+                    type: string
+                    format: uuid
+                    example: "a1b2c3d4-5678-90ab-cdef-123456789012"
+                    description: ID généré automatiquement par le backend
+                  userId:
+                    type: string
+                    format: uuid
+                    example: "user-uuid-123"
+                    description: Extrait du token JWT
+                  eventId:
+                    type: string
+                    format: uuid
                   status:
                     type: string
                     example: PENDING
+                  totalAmount:
+                    type: number
+                    format: decimal
+                    example: 150.50
+                  createdAt:
+                    type: string
+                    format: date-time
+                    example: "2025-11-20T10:00:00Z"
+                    description: Généré automatiquement par le backend
+                  reservedSeats:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                          description: ID généré automatiquement par le backend
+                        ticketType:
+                          type: string
+                          enum: [VIP, NORMAL, GOLD, EARLY_BIRD]
+                          example: "VIP"
+                        seatNumber:
+                          type: string
+                          nullable: true
+                          example: "A12"
         '400':
-          description: Données invalides
+          description: Données invalides - Sièges manquants ou format incorrect
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+        '404':
+          description: Événement non trouvé
         '409':
-          description: Conflit (places indisponibles)
+          description: Conflit - Un ou plusieurs sièges sont déjà réservés
+        '422':
+          description: Capacité insuffisante - Plus de places disponibles
 
   /api/reservations/{id}:
     get:
       tags:
         - Reservations
-      summary: Obtenir les détails d'une réservation
-      description: Retourne les informations d'une réservation spécifique
+      summary: Obtenir les détails d'une réservation spécifique
+      description: Récupère les informations complètes d'une réservation spécifique
       security:
         - bearerAuth: []
       parameters:
@@ -658,8 +1221,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
-          description: ID de la réservation
+            type: string
+            format: uuid
       responses:
         '200':
           description: Détails de la réservation
@@ -668,20 +1231,102 @@ paths:
               schema:
                 type: object
                 properties:
-                  reservationId:
-                    type: integer
-                    example: 1
+                  id:
+                    type: string
+                    format: uuid
+                    example: "a1b2c3d4-5678-90ab-cdef-123456789012"
+                  userId:
+                    type: string
+                    format: uuid
+                  eventId:
+                    type: string
+                    format: uuid
+                  eventTitle:
+                    type: string
+                    example: "Summer Festival"
                   status:
                     type: string
-                    example: PENDING
+                    enum: [PENDING, CONFIRMED, CANCELLED]
+                    example: CONFIRMED
+                  totalAmount:
+                    type: number
+                    format: decimal
+                    example: 150.50
+                  createdAt:
+                    type: string
+                    format: date-time
+                  reservedSeats:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        ticketType:
+                          type: string
+                          enum: [VIP, NORMAL, GOLD, EARLY_BIRD]
+                          example: "VIP"
+                        seatNumber:
+                          type: string
+                          nullable: true
+                          example: "A12"
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+        '403':
+          description: Accès interdit - Cette réservation ne vous appartient pas
+        '404':
+          description: Réservation non trouvée
+    
+    delete:
+      tags:
+        - Reservations
+      summary: Annuler une réservation
+      description: Annule une réservation existante et libère les sièges réservés
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Réservation annulée avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    example: "a1b2c3d4-5678-90ab-cdef-123456789012"
+                  status:
+                    type: string
+                    example: CANCELLED
+                  message:
+                    type: string
+                    example: "Reservation cancelled successfully"
+        '400':
+          description: Impossible d'annuler - Réservation déjà annulée ou confirmée
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+        '403':
+          description: Accès interdit - Cette réservation ne vous appartient pas
         '404':
           description: Réservation non trouvée
 
-  /api/payments:
+  
+
+# ------------------------- TRANSACTIONS -------------------------
+  /api/transactions:
     post:
       tags:
-        - Payments
-      summary: Initier un paiement
+        - Transaction
+      summary: Initier une transaction
       description: Démarre le processus de paiement pour une réservation
       security:
         - bearerAuth: []
@@ -694,41 +1339,86 @@ paths:
               required:
                 - reservationId
                 - amount
-                - method
+                - currency
+                - paymentMethod
               properties:
                 reservationId:
-                  type: integer
-                  example: 1
+                  type: string
+                  format: uuid
+                  example: "a1b2c3d4-5678-90ab-cdef-123456789012"
+                  description: Référence vers la réservation
                 amount:
                   type: number
-                  format: float
-                  example: 500.0
-                method:
+                  format: decimal
+                  example: 150.50
+                  description: Montant de la transaction
+                currency:
                   type: string
-                  example: card
+                  example: "EUR"
+                  description: Devise de la transaction
+                paymentMethod:
+                  type: string
+                  enum: [STRIPE, PAYPAL]
+                  example: "STRIPE"
+                  description: Méthode de paiement utilisée
       responses:
         '201':
-          description: Paiement initié
+          description: Transaction initiée avec succès
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  paymentId:
-                    type: integer
-                    example: 1
+                  id:
+                    type: string
+                    format: uuid
+                    example: "trans-uuid-123"
+                    description: ID de la transaction généré automatiquement
+                  reservationId:
+                    type: string
+                    format: uuid
+                  userId:
+                    type: string
+                    format: uuid
+                    description: Extrait du token JWT
+                  amount:
+                    type: number
+                    format: decimal
+                    example: 150.50
+                  currency:
+                    type: string
+                    example: "EUR"
                   status:
                     type: string
-                    example: IN_PROGRESS
+                    example: "INITIATED"
+                    description: Statut initial de la transaction
+                  paymentMethod:
+                    type: string
+                    example: "STRIPE"
+                  transactionDate:
+                    type: string
+                    format: date-time
+                    example: "2025-11-28T14:30:00Z"
+                  providerTransactionId:
+                    type: string
+                    nullable: true
+                    example: "pi_3N1234567890"
+                    description: ID de la transaction chez le provider (Stripe/PayPal)
         '400':
-          description: Données invalides
+          description: Données invalides - Montant incorrect ou méthode invalide
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+        '404':
+          description: Réservation non trouvée
+        '409':
+          description: Conflit - Transaction déjà existante pour cette réservation
 
-  /api/payments/{id}:
+  /api/transactions/{id}:
     get:
       tags:
-        - Payments
-      summary: Obtenir le statut d'un paiement
-      description: Retourne l'état actuel d'un paiement
+        - Transaction
+      summary: Obtenir le statut d'une transaction
+      description: Retourne l'état actuel et les détails d'une transaction
       security:
         - bearerAuth: []
       parameters:
@@ -736,25 +1426,348 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
-          description: ID du paiement
+            type: string
+            format: uuid
+          description: ID de la transaction
       responses:
         '200':
-          description: Statut du paiement
+          description: Détails de la transaction
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  paymentId:
-                    type: integer
-                    example: 1
+                  id:
+                    type: string
+                    format: uuid
+                    example: "trans-uuid-123"
+                  reservationId:
+                    type: string
+                    format: uuid
+                  userId:
+                    type: string
+                    format: uuid
+                  amount:
+                    type: number
+                    format: decimal
+                    example: 150.50
+                  currency:
+                    type: string
+                    example: "EUR"
                   status:
                     type: string
-                    example: IN_PROGRESS
+                    enum: [INITIATED, SUCCESS, FAILED, REFUNDED]
+                    example: "SUCCESS"
+                  paymentMethod:
+                    type: string
+                    enum: [STRIPE, PAYPAL]
+                    example: "STRIPE"
+                  transactionDate:
+                    type: string
+                    format: date-time
+                  providerTransactionId:
+                    type: string
+                    nullable: true
+                    example: "pi_3N1234567890"
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+        '403':
+          description: Accès interdit - Cette transaction ne vous appartient pas
         '404':
-          description: Paiement non trouvé
+          description: Transaction non trouvée
 
+  /api/transactions/{id}/payment:
+    post:
+      tags:
+        - Transaction
+      summary: Effectuer le paiement
+      description: Confirme et exécute le paiement d'une transaction initiée
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - paymentToken
+              properties:
+                paymentToken:
+                  type: string
+                  example: "tok_visa_1234567890"
+                  description: Token de paiement fourni par Stripe/PayPal
+                paymentDetails:
+                  type: object
+                  description: Détails additionnels du paiement (optionnel)
+                  properties:
+                    cardLast4:
+                      type: string
+                      example: "4242"
+                    cardBrand:
+                      type: string
+                      example: "Visa"
+      responses:
+        '200':
+          description: Paiement effectué avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: "SUCCESS"
+                  providerTransactionId:
+                    type: string
+                    example: "pi_3N1234567890"
+                  message:
+                    type: string
+                    example: "Payment processed successfully"
+                  transactionDate:
+                    type: string
+                    format: date-time
+        '400':
+          description: Échec du paiement - Token invalide ou paiement refusé
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+        '403':
+          description: Accès interdit - Cette transaction ne vous appartient pas
+        '404':
+          description: Transaction non trouvée
+        '409':
+          description: Conflit - Transaction déjà payée ou annulée
+
+  /api/transactions/{id}/cancel:
+    post:
+      tags:
+        - Transaction
+      summary: Annuler une transaction
+      description: Annule une transaction initiée qui n'a pas encore été payée
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  example: "Client cancelled the reservation"
+                  description: Raison de l'annulation (optionnel)
+      responses:
+        '200':
+          description: Transaction annulée avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    example: "trans-uuid-123"
+                  status:
+                    type: string
+                    example: "FAILED"
+                  message:
+                    type: string
+                    example: "Transaction cancelled successfully"
+        '400':
+          description: Impossible d'annuler - Transaction déjà payée ou remboursée
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+        '403':
+          description: Accès interdit - Cette transaction ne vous appartient pas
+        '404':
+          description: Transaction non trouvée
+
+  /api/transactions/{id}/refund:
+    post:
+      tags:
+        - Transaction
+      summary: Rembourser une transaction
+      description: Effectue le remboursement d'une transaction payée
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  format: decimal
+                  nullable: true
+                  example: 75.25
+                  description: Montant à rembourser (NULL = remboursement total)
+                reason:
+                  type: string
+                  example: "Event cancelled"
+                  description: Raison du remboursement
+      responses:
+        '200':
+          description: Remboursement effectué avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: "REFUNDED"
+                  refundAmount:
+                    type: number
+                    format: decimal
+                    example: 150.50
+                  providerTransactionId:
+                    type: string
+                    example: "re_3N1234567890"
+                  message:
+                    type: string
+                    example: "Refund processed successfully"
+        '400':
+          description: Impossible de rembourser - Transaction non payée ou déjà remboursée
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+        '403':
+          description: Accès interdit - Cette transaction ne vous appartient pas
+        '404':
+          description: Transaction non trouvée
+        '422':
+          description: Montant de remboursement invalide
+
+  /api/invoices/{transactionId}:
+    post:
+      tags:
+        - Transaction
+      summary: Générer une facture
+      description: Génère une facture PDF pour une transaction réussie
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID de la transaction
+      responses:
+        '201':
+          description: Facture générée avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    example: "invoice-uuid-123"
+                    description: ID de la facture généré automatiquement
+                  transactionId:
+                    type: string
+                    format: uuid
+                  invoiceNumber:
+                    type: string
+                    example: "INV-2025-001234"
+                    description: Numéro unique de facture
+                  pdfUrl:
+                    type: string
+                    example: "https://storage.eventify.com/invoices/INV-2025-001234.pdf"
+                    description: URL de téléchargement du PDF
+                  generatedAt:
+                    type: string
+                    format: date-time
+                    example: "2025-11-28T14:35:00Z"
+        '400':
+          description: Facture déjà existante pour cette transaction
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+        '403':
+          description: Accès interdit - Cette transaction ne vous appartient pas
+        '404':
+          description: Transaction non trouvée
+        '422':
+          description: Transaction non payée - Impossible de générer une facture
+
+    get:
+      tags:
+        - Transaction
+      summary: Récupérer une facture
+      description: Obtient les détails d'une facture existante
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Détails de la facture
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  transactionId:
+                    type: string
+                    format: uuid
+                  invoiceNumber:
+                    type: string
+                    example: "INV-2025-001234"
+                  pdfUrl:
+                    type: string
+                    example: "https://storage.eventify.com/invoices/INV-2025-001234.pdf"
+                  generatedAt:
+                    type: string
+                    format: date-time
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+        '403':
+          description: Accès interdit - Cette facture ne vous appartient pas
+        '404':
+          description: Facture non trouvée
+  
+  # ------------------------- NOTIFICATIONS -------------------------
   /api/notifications:
     post:
       tags:
