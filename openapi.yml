@@ -1916,7 +1916,456 @@ paths:
                     example: 2
         '400':
           description: Données invalides
+# ------------------------- RESALE -------------------------
+  /api/resale/offers:
+    get:
+      tags:
+        - Resale
+      summary: Consulter les offres de revente disponibles
+      description: Liste toutes les offres de revente en statut OPEN
+      parameters:
+        - name: eventId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer par evenement specifique
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+            format: decimal
+          description: Prix maximum
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+            format: decimal
+          description: Prix minimum
+      responses:
+        '200':
+          description: Liste des offres de revente disponibles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                      example: "resale-uuid-123"
+                    originalReservationId:
+                      type: string
+                      format: uuid
+                      example: "reservation-uuid-456"
+                    sellerUserId:
+                      type: string
+                      format: uuid
+                      example: "user-uuid-789"
+                    price:
+                      type: number
+                      format: decimal
+                      example: 120.00
+                    status:
+                      type: string
+                      enum: [OPEN, SOLD, CANCELLED]
+                      example: OPEN
+                    createdAt:
+                      type: string
+                      format: date-time
+                      example: "2025-11-20T10:00:00Z"
+                    eventDetails:
+                      type: object
+                      description: Informations sur l'evenement concerne
+                      properties:
+                        eventId:
+                          type: string
+                          format: uuid
+                        eventTitle:
+                          type: string
+                          example: "Summer Festival"
+                        eventDate:
+                          type: string
+                          format: date-time
+                    seatsDetails:
+                      type: array
+                      description: Details des places en revente
+                      items:
+                        type: object
+                        properties:
+                          ticketType:
+                            type: string
+                            enum: [VIP, NORMAL, GOLD, EARLY_BIRD]
+                            example: "VIP"
+                          seatNumber:
+                            type: string
+                            nullable: true
+                            example: "A12"
+        '400':
+          description: Parametres de requete invalides
+        '500':
+          description: Erreur serveur
 
+    post:
+      tags:
+        - Resale
+      summary: Mettre une/des places en revente
+      description: Cree une offre de revente pour une reservation existante
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - originalReservationId
+                - price
+              properties:
+                originalReservationId:
+                  type: string
+                  format: uuid
+                  example: "reservation-uuid-456"
+                  description: ID de la reservation originale a revendre
+                price:
+                  type: number
+                  format: decimal
+                  example: 120.00
+                  description: Prix de revente propose
+      responses:
+        '201':
+          description: Offre de revente creee avec succes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    example: "resale-uuid-123"
+                    description: ID de l'offre de revente genere automatiquement
+                  originalReservationId:
+                    type: string
+                    format: uuid
+                    example: "reservation-uuid-456"
+                  sellerUserId:
+                    type: string
+                    format: uuid
+                    example: "user-uuid-789"
+                    description: Extrait du token JWT
+                  price:
+                    type: number
+                    format: decimal
+                    example: 120.00
+                  status:
+                    type: string
+                    example: OPEN
+                    description: Statut initial de l'offre
+                  createdAt:
+                    type: string
+                    format: date-time
+                    example: "2025-11-28T14:30:00Z"
+                    description: Date de creation generee automatiquement
+        '400':
+          description: Donnees invalides - Prix incorrect ou reservation invalide
+        '401':
+          description: Non autorise - Token manquant ou invalide
+        '403':
+          description: Acces interdit - Cette reservation ne vous appartient pas
+        '404':
+          description: Reservation originale non trouvee
+        '409':
+          description: Conflit - Cette reservation est deja en revente
+
+  /api/resale/offers/{id}:
+    get:
+      tags:
+        - Resale
+      summary: Obtenir les details d'une offre de revente
+      description: Recupere les informations completes d'une offre de revente specifique
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Details de l'offre de revente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    example: "resale-uuid-123"
+                  originalReservationId:
+                    type: string
+                    format: uuid
+                  sellerUserId:
+                    type: string
+                    format: uuid
+                  price:
+                    type: number
+                    format: decimal
+                    example: 120.00
+                  status:
+                    type: string
+                    enum: [OPEN, SOLD, CANCELLED]
+                    example: OPEN
+                  createdAt:
+                    type: string
+                    format: date-time
+                  eventDetails:
+                    type: object
+                    properties:
+                      eventId:
+                        type: string
+                        format: uuid
+                      eventTitle:
+                        type: string
+                        example: "Summer Festival"
+                      eventDate:
+                        type: string
+                        format: date-time
+                  seatsDetails:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ticketType:
+                          type: string
+                          enum: [VIP, NORMAL, GOLD, EARLY_BIRD]
+                        seatNumber:
+                          type: string
+                          nullable: true
+        '404':
+          description: Offre de revente non trouvee
+        '500':
+          description: Erreur serveur
+
+    delete:
+      tags:
+        - Resale
+      summary: Annuler la revente
+      description: Annule une offre de revente et restaure la reservation originale
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Offre de revente annulee avec succes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    example: "resale-uuid-123"
+                  status:
+                    type: string
+                    example: CANCELLED
+                  message:
+                    type: string
+                    example: "Resale offer cancelled successfully"
+        '400':
+          description: Impossible d'annuler - Offre deja vendue ou annulee
+        '401':
+          description: Non autorise - Token manquant ou invalide
+        '403':
+          description: Acces interdit - Cette offre ne vous appartient pas
+        '404':
+          description: Offre de revente non trouvee
+
+  /api/resale/offers/{id}/purchase:
+    post:
+      tags:
+        - Resale
+      summary: Reserver la/les places a revendre
+      description: Achete une offre de revente et cree une nouvelle reservation pour l'acheteur
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID de l'offre de revente
+      responses:
+        '201':
+          description: Achat effectue avec succes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactionId:
+                    type: string
+                    format: uuid
+                    example: "resale-trans-uuid-456"
+                    description: ID de la transaction de revente genere automatiquement
+                  resaleOfferId:
+                    type: string
+                    format: uuid
+                    example: "resale-uuid-123"
+                  buyerUserId:
+                    type: string
+                    format: uuid
+                    example: "buyer-uuid-789"
+                    description: Extrait du token JWT
+                  soldAt:
+                    type: string
+                    format: date-time
+                    example: "2025-11-28T15:00:00Z"
+                    description: Date de vente generee automatiquement
+                  newReservationId:
+                    type: string
+                    format: uuid
+                    example: "new-reservation-uuid-999"
+                    description: ID de la nouvelle reservation creee pour l'acheteur
+                  message:
+                    type: string
+                    example: "Resale purchase completed successfully"
+        '400':
+          description: Impossible d'acheter - Offre non disponible
+        '401':
+          description: Non autorise - Token manquant ou invalide
+        '403':
+          description: Acces interdit - Vous ne pouvez pas acheter votre propre offre
+        '404':
+          description: Offre de revente non trouvee
+        '409':
+          description: Conflit - Offre deja vendue ou annulee
+
+  /api/resale/my-offers:
+    get:
+      tags:
+        - Resale
+      summary: Consulter mes offres de revente
+      description: Liste toutes les offres de revente creees par l'utilisateur connecte
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [OPEN, SOLD, CANCELLED]
+          description: Filtrer par statut d'offre
+      responses:
+        '200':
+          description: Liste des offres de revente de l'utilisateur
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    originalReservationId:
+                      type: string
+                      format: uuid
+                    price:
+                      type: number
+                      format: decimal
+                      example: 120.00
+                    status:
+                      type: string
+                      enum: [OPEN, SOLD, CANCELLED]
+                    createdAt:
+                      type: string
+                      format: date-time
+                    soldAt:
+                      type: string
+                      format: date-time
+                      nullable: true
+                      description: Date de vente (NULL si non vendu)
+                    eventDetails:
+                      type: object
+                      properties:
+                        eventId:
+                          type: string
+                          format: uuid
+                        eventTitle:
+                          type: string
+                        eventDate:
+                          type: string
+                          format: date-time
+        '401':
+          description: Non autorise - Token manquant ou invalide
+        '500':
+          description: Erreur serveur
+
+  /api/resale/my-purchases:
+    get:
+      tags:
+        - Resale
+      summary: Consulter mes achats de revente
+      description: Liste toutes les offres de revente achetees par l'utilisateur connecte
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liste des achats de revente de l'utilisateur
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    transactionId:
+                      type: string
+                      format: uuid
+                    resaleOfferId:
+                      type: string
+                      format: uuid
+                    price:
+                      type: number
+                      format: decimal
+                      example: 120.00
+                    soldAt:
+                      type: string
+                      format: date-time
+                    newReservationId:
+                      type: string
+                      format: uuid
+                      description: ID de la reservation obtenue via la revente
+                    eventDetails:
+                      type: object
+                      properties:
+                        eventId:
+                          type: string
+                          format: uuid
+                        eventTitle:
+                          type: string
+                        eventDate:
+                          type: string
+                          format: date-time
+        '401':
+          description: Non autorise - Token manquant ou invalide
+        '500':
+          description: Erreur serveur
 components:
   securitySchemes:
     bearerAuth:
