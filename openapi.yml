@@ -1767,155 +1767,6 @@ paths:
         '404':
           description: Facture non trouvée
   
-  # ------------------------- NOTIFICATIONS -------------------------
-  /api/notifications:
-    post:
-      tags:
-        - Notifications
-      summary: Créer et envoyer une notification
-      description: Envoie une notification à un ou plusieurs utilisateurs
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - type
-                - to
-                - subject
-                - body
-              properties:
-                type:
-                  type: string
-                  example: email
-                to:
-                  type: array
-                  items:
-                    type: string
-                  example: ["keyvan.nikazm@gmail.com", "ethan.vandenberghen@gmail.com"]
-                subject:
-                  type: string
-                  example: Votre réservation est confirmée
-                body:
-                  type: string
-                  example: Merci pour votre achat !
-      responses:
-        '201':
-          description: Notification créée
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                    example: 1
-                  email:
-                    type: string
-                    example: ethan.vandenberghen@gmail.com
-                  createdAt:
-                    type: string
-                    example: "05-02-2026"
-        '400':
-          description: Données invalides
-        '409':
-          description: Conflit
-
-  /api/notifications/{id}:
-    get:
-      tags:
-        - Notifications
-      summary: Récupérer le statut d'une notification
-      description: Obtient les détails d'une notification existante
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          description: ID de la notification
-      responses:
-        '200':
-          description: Statut de la notification
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  notificationId:
-                    type: integer
-                    example: 12
-                  type:
-                    type: string
-                    example: email
-                  to:
-                    type: array
-                    items:
-                      type: string
-                    example: ["keyvan.nikazm@gmail.com"]
-                  status:
-                    type: string
-                    example: SENT
-                  sentAt:
-                    type: string
-                    example: "12-12-2025"
-        '401':
-          description: Non autorisé
-
-  /api/notifications/promotions:
-    post:
-      tags:
-        - Notifications
-      summary: Envoyer une campagne promotionnelle
-      description: Envoie une promotion à plusieurs utilisateurs
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - title
-                - message
-                - recipients
-              properties:
-                title:
-                  type: string
-                  example: Offre spéciale !
-                message:
-                  type: string
-                  example: Bénéficiez de -20% sur votre prochain événement.
-                recipients:
-                  type: array
-                  items:
-                    type: string
-                  example: ["promotions.evenement@gmail.com", "keyvan.nikazm@gmail.com"]
-      responses:
-        '201':
-          description: Campagne créée
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  campaignId:
-                    type: integer
-                    example: 5
-                  status:
-                    type: string
-                    example: IN_QUEUE
-                  recipientsCount:
-                    type: integer
-                    example: 2
-        '400':
-          description: Données invalides
 # ------------------------- RESALE -------------------------
   /api/resale/offers:
     get:
@@ -2366,6 +2217,1432 @@ paths:
           description: Non autorise - Token manquant ou invalide
         '500':
           description: Erreur serveur
+  # ------------------------- NOTIFICATIONS -------------------------
+  /api/notifications/interests:
+    post:
+      tags:
+        - Notifications
+      summary: Indiquer son intérêt pour un événement
+      description: Permet à un utilisateur de s'inscrire pour être notifié lors de l'ouverture de la billetterie
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - eventId
+              properties:
+                eventId:
+                  type: string
+                  format: uuid
+                  example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      responses:
+        '201':
+          description: Intérêt enregistré avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: 6748a1b2c3d4e5f6a7b8c9d0
+                    description: ID MongoDB de l'intérêt créé
+                  userId:
+                    type: string
+                    format: uuid
+                    example: user-uuid-a1b2c3d4-5678-90ab-cdef-123456789012
+                    description: Extrait du token JWT
+                  eventId:
+                    type: string
+                    format: uuid
+                    example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  eventTitle:
+                    type: string
+                    example: Summer Festival 2026
+                    description: Titre de l'événement concerné
+                  notified:
+                    type: boolean
+                    example: false
+                    description: Statut de notification (false par défaut)
+                  createdAt:
+                    type: string
+                    format: date-time
+                    example: 2025-11-28T10:30:00Z
+                    description: Date de création générée automatiquement
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+        '404':
+          description: Événement non trouvé
+        '409':
+          description: Intérêt déjà enregistré pour cet événement
+
+    get:
+      tags:
+        - Notifications
+      summary: Consulter ses intérêts
+      description: Liste tous les événements pour lesquels l'utilisateur a indiqué son intérêt
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liste des intérêts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: 6748a1b2c3d4e5f6a7b8c9d0
+                    eventId:
+                      type: string
+                      format: uuid
+                      example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    eventTitle:
+                      type: string
+                      example: Summer Festival 2026
+                    eventDate:
+                      type: string
+                      format: date-time
+                      example: 2026-07-15T20:00:00Z
+                    notified:
+                      type: boolean
+                      example: false
+                    createdAt:
+                      type: string
+                      format: date-time
+                      example: 2025-11-28T10:30:00Z
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+
+  /api/notifications/interests/{eventId}:
+    delete:
+      tags:
+        - Notifications
+      summary: Retirer son intérêt pour un événement
+      description: Supprime l'intérêt de l'utilisateur pour un événement spécifique
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID de l'événement
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      responses:
+        '200':
+          description: Intérêt supprimé avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: 6748a1b2c3d4e5f6a7b8c9d0
+                    description: ID de l'intérêt supprimé
+                  message:
+                    type: string
+                    example: Interest deleted successfully
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+        '404':
+          description: Intérêt non trouvé
+
+  /api/notifications/event-updates:
+    post:
+      tags:
+        - Notifications
+      summary: Créer une notification de changement d'événement
+      description: Informe automatiquement tous les utilisateurs ayant réservé cet événement
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - eventId
+                - updateType
+                - description
+              properties:
+                eventId:
+                  type: string
+                  format: uuid
+                  example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                updateType:
+                  type: string
+                  enum: [MODIFICATION, CANCELLATION]
+                  example: MODIFICATION
+                description:
+                  type: string
+                  example: L'événement est reporté au 15 décembre 2026 en raison de conditions météorologiques
+      responses:
+        '201':
+          description: Mise à jour enregistrée et notifications envoyées
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: 6748b5c6d7e8f9a0b1c2d3e4
+                    description: ID MongoDB de l'update créé
+                  eventId:
+                    type: string
+                    format: uuid
+                    example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  eventTitle:
+                    type: string
+                    example: Summer Festival 2026
+                  updateType:
+                    type: string
+                    example: MODIFICATION
+                  description:
+                    type: string
+                    example: L'événement est reporté au 15 décembre 2026 en raison de conditions météorologiques
+                  affectedUsers:
+                    type: integer
+                    example: 247
+                    description: Nombre d'utilisateurs concernés par ce changement
+                  notificationsSent:
+                    type: integer
+                    example: 247
+                    description: Nombre de notifications envoyées avec succès
+                  createdAt:
+                    type: string
+                    format: date-time
+                    example: 2025-11-28T14:25:00Z
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+        '404':
+          description: Événement non trouvé
+        '400':
+          description: Données invalides
+
+    get:
+      tags:
+        - Notifications
+      summary: Consulter l'historique des modifications d'événements
+      description: Liste toutes les modifications et annulations d'événements
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: eventId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer par événement spécifique
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        - name: updateType
+          in: query
+          schema:
+            type: string
+            enum: [MODIFICATION, CANCELLATION]
+          description: Filtrer par type de modification
+      responses:
+        '200':
+          description: Liste des modifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: 6748b5c6d7e8f9a0b1c2d3e4
+                    eventId:
+                      type: string
+                      format: uuid
+                      example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    eventTitle:
+                      type: string
+                      example: Summer Festival 2026
+                    updateType:
+                      type: string
+                      example: MODIFICATION
+                    description:
+                      type: string
+                      example: L'événement est reporté au 15 décembre 2026
+                    affectedUsers:
+                      type: integer
+                      example: 247
+                    createdAt:
+                      type: string
+                      format: date-time
+                      example: 2025-11-28T14:25:00Z
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+
+  /api/notifications/promotions:
+    post:
+      tags:
+        - Notifications
+      summary: Créer une campagne promotionnelle
+      description: Envoie une promotion ciblée pour promouvoir un événement
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - eventId
+                - message
+                - targetUsers
+              properties:
+                eventId:
+                  type: string
+                  format: uuid
+                  example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                title:
+                  type: string
+                  example: Offre Early Bird - 30% de réduction
+                  description: Titre de la campagne promotionnelle
+                message:
+                  type: string
+                  example: Profitez de -30% sur le Summer Festival 2026 avec le code SUMMER30
+                targetUsers:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  example: [user-uuid-111, user-uuid-222, user-uuid-333]
+                  description: Liste des IDs utilisateurs ciblés
+      responses:
+        '201':
+          description: Campagne créée et envoyée avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: 6748c7d8e9f0a1b2c3d4e5f6
+                    description: ID MongoDB de la campagne créée
+                  eventId:
+                    type: string
+                    format: uuid
+                    example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  eventTitle:
+                    type: string
+                    example: Summer Festival 2026
+                  title:
+                    type: string
+                    example: Offre Early Bird - 30% de réduction
+                  message:
+                    type: string
+                    example: Profitez de -30% sur le Summer Festival 2026 avec le code SUMMER30
+                  targetUsers:
+                    type: array
+                    items:
+                      type: string
+                    example: [user-uuid-111, user-uuid-222, user-uuid-333]
+                  recipientsCount:
+                    type: integer
+                    example: 3
+                    description: Nombre de destinataires ciblés
+                  sentAt:
+                    type: string
+                    format: date-time
+                    example: 2025-11-28T15:00:00Z
+                    description: Date d'envoi de la campagne
+        '400':
+          description: Données invalides - Liste de destinataires vide
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+        '404':
+          description: Événement non trouvé
+
+    get:
+      tags:
+        - Notifications
+      summary: Consulter les campagnes promotionnelles
+      description: Liste toutes les campagnes promotionnelles créées
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: eventId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer par événement
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      responses:
+        '200':
+          description: Liste des campagnes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: 6748c7d8e9f0a1b2c3d4e5f6
+                    eventId:
+                      type: string
+                      format: uuid
+                      example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    eventTitle:
+                      type: string
+                      example: Summer Festival 2026
+                    title:
+                      type: string
+                      example: Offre Early Bird - 30% de réduction
+                    message:
+                      type: string
+                      example: Profitez de -30% sur le Summer Festival 2026
+                    recipientsCount:
+                      type: integer
+                      example: 3
+                    sentAt:
+                      type: string
+                      format: date-time
+                      example: 2025-11-28T15:00:00Z
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+
+  /api/notifications/history:
+    get:
+      tags:
+        - Notifications
+      summary: Historique des notifications personnelles
+      description: Consulter toutes les notifications reçues par l'utilisateur connecté
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [EMAIL, PUSH, SMS]
+          description: Filtrer par type de notification
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [SENT, FAILED]
+          description: Filtrer par statut
+      responses:
+        '200':
+          description: Liste des notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: 6748d8e9f0a1b2c3d4e5f6a7
+                    type:
+                      type: string
+                      example: EMAIL
+                    subject:
+                      type: string
+                      example: Votre intérêt pour Summer Festival 2026
+                    message:
+                      type: string
+                      example: La billetterie pour le Summer Festival 2026 est maintenant ouverte
+                    status:
+                      type: string
+                      example: SENT
+                    sentAt:
+                      type: string
+                      format: date-time
+                      example: 2025-11-28T16:00:00Z
+                    createdAt:
+                      type: string
+                      format: date-time
+                      example: 2025-11-28T15:55:00Z
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+
+  /api/notifications/{id}:
+    get:
+      tags:
+        - Notifications
+      summary: Obtenir les détails d'une notification
+      description: Récupère les informations complètes d'une notification spécifique
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID MongoDB de la notification
+          example: 6748d8e9f0a1b2c3d4e5f6a7
+      responses:
+        '200':
+          description: Détails de la notification
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: 6748d8e9f0a1b2c3d4e5f6a7
+                  type:
+                    type: string
+                    example: EMAIL
+                  userId:
+                    type: string
+                    format: uuid
+                    example: user-uuid-a1b2c3d4-5678-90ab-cdef-123456789012
+                  subject:
+                    type: string
+                    example: Votre intérêt pour Summer Festival 2026
+                  message:
+                    type: string
+                    example: La billetterie pour le Summer Festival 2026 est maintenant ouverte
+                  status:
+                    type: string
+                    example: SENT
+                  sentAt:
+                    type: string
+                    format: date-time
+                    example: 2025-11-28T16:00:00Z
+                  createdAt:
+                    type: string
+                    format: date-time
+                    example: 2025-11-28T15:55:00Z
+                  metadata:
+                    type: object
+                    description: Données contextuelles de la notification
+                    properties:
+                      eventId:
+                        type: string
+                        format: uuid
+                        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                      eventTitle:
+                        type: string
+                        example: Summer Festival 2026
+                      notificationType:
+                        type: string
+                        example: INTEREST_CONFIRMATION
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+        '403':
+          description: Accès interdit - Cette notification ne vous appartient pas
+        '404':
+          description: Notification non trouvée
+  # ------------------------- DASHBOARD -------------------------
+  /api/dashboard:
+    get:
+      tags:
+        - Dashboard Service
+      summary: Accéder au Dashboard principal
+      description: Affiche une vue d'ensemble avec les statistiques clés et les événements récents
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard récupéré avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  overview:
+                    type: object
+                    description: Vue d'ensemble des statistiques principales
+                    properties:
+                      totalEvents:
+                        type: integer
+                        example: 156
+                        description: COUNT depuis EVENTS
+                      totalReservations:
+                        type: integer
+                        example: 3428
+                        description: COUNT depuis RESERVATIONS
+                      totalRevenue:
+                        type: number
+                        format: decimal
+                        example: 284567.50
+                        description: SUM de TRANSACTIONS.amount où status = SUCCESS
+                      totalUsers:
+                        type: integer
+                        example: 8932
+                        description: COUNT depuis USERS
+                      activePromotions:
+                        type: integer
+                        example: 12
+                        description: COUNT depuis PROMOTIONAL_CAMPAIGNS
+                  recentEvents:
+                    type: array
+                    description: Liste des 5 événements les plus récents depuis EVENTS
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                          description: EVENTS.id
+                        title:
+                          type: string
+                          example: Summer Festival 2026
+                          description: EVENTS.title
+                        description:
+                          type: string
+                          example: Un festival incroyable
+                          description: EVENTS.description
+                        start_date:
+                          type: string
+                          format: date-time
+                          example: 2026-07-15T20:00:00Z
+                          description: EVENTS.start_date
+                        end_date:
+                          type: string
+                          format: date-time
+                          example: 2026-07-16T02:00:00Z
+                          description: EVENTS.end_date
+                        is_available:
+                          type: boolean
+                          example: true
+                          description: EVENTS.is_available
+                        venue:
+                          type: object
+                          description: Depuis VENUES (JOIN)
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            name:
+                              type: string
+                              example: Zénith de Paris
+                            capacity:
+                              type: integer
+                              example: 6000
+                            address:
+                              type: string
+                              example: 211 Avenue Jean Jaurès, 75019 Paris
+                        category:
+                          type: object
+                          description: Depuis CATEGORIES (JOIN)
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            name:
+                              type: string
+                              example: Concert
+                        reservationsCount:
+                          type: integer
+                          example: 245
+                          description: COUNT depuis RESERVATIONS WHERE event_id = EVENTS.id
+                        totalRevenue:
+                          type: number
+                          format: decimal
+                          example: 18375.00
+                          description: SUM de RESERVATIONS.total_amount WHERE event_id = EVENTS.id
+                  topEvents:
+                    type: array
+                    description: Top 5 des événements par nombre de réservations
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                        title:
+                          type: string
+                          example: Electro Night Paris
+                        reservationsCount:
+                          type: integer
+                          example: 487
+                          description: COUNT de RESERVATIONS
+                        totalRevenue:
+                          type: number
+                          format: decimal
+                          example: 36525.00
+                          description: SUM de RESERVATIONS.total_amount
+                        venueCapacity:
+                          type: integer
+                          example: 6000
+                          description: VENUES.capacity
+                        occupancyRate:
+                          type: number
+                          format: float
+                          example: 81.2
+                          description: CALCUL (reservationsCount / venueCapacity * 100)
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+
+  /api/dashboard/statistics:
+    get:
+      tags:
+        - Dashboard Service
+      summary: Afficher les statistiques détaillées
+      description: Récupère des statistiques détaillées avec filtres par période et type
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [DAY, WEEK, MONTH, YEAR]
+            default: MONTH
+          description: Période d'agrégation des statistiques
+          example: MONTH
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Date de début pour le filtrage
+          example: 2025-01-01
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Date de fin pour le filtrage
+          example: 2025-12-31
+      responses:
+        '200':
+          description: Statistiques récupérées avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: string
+                    example: MONTH
+                  dateRange:
+                    type: object
+                    properties:
+                      start:
+                        type: string
+                        format: date
+                        example: 2025-11-01
+                      end:
+                        type: string
+                        format: date
+                        example: 2025-11-30
+                  transactionStatistics:
+                    type: object
+                    description: Depuis TRANSACTIONS
+                    properties:
+                      totalRevenue:
+                        type: number
+                        format: decimal
+                        example: 42850.75
+                        description: SUM de TRANSACTIONS.amount WHERE status = SUCCESS
+                      totalTransactions:
+                        type: integer
+                        example: 573
+                        description: COUNT de TRANSACTIONS
+                      successfulTransactions:
+                        type: integer
+                        example: 548
+                        description: COUNT WHERE status = SUCCESS
+                      failedTransactions:
+                        type: integer
+                        example: 25
+                        description: COUNT WHERE status = FAILED
+                      refundedTransactions:
+                        type: integer
+                        example: 12
+                        description: COUNT WHERE status = REFUNDED
+                      averageTransactionAmount:
+                        type: number
+                        format: decimal
+                        example: 74.80
+                        description: CALCUL AVG(amount)
+                      paymentMethodBreakdown:
+                        type: array
+                        description: GROUP BY payment_method
+                        items:
+                          type: object
+                          properties:
+                            payment_method:
+                              type: string
+                              example: STRIPE
+                              description: TRANSACTIONS.payment_method
+                            count:
+                              type: integer
+                              example: 425
+                            totalAmount:
+                              type: number
+                              format: decimal
+                              example: 31875.00
+                  reservationStatistics:
+                    type: object
+                    description: Depuis RESERVATIONS
+                    properties:
+                      totalReservations:
+                        type: integer
+                        example: 573
+                        description: COUNT de RESERVATIONS
+                      confirmedReservations:
+                        type: integer
+                        example: 548
+                        description: COUNT WHERE status = CONFIRMED
+                      pendingReservations:
+                        type: integer
+                        example: 13
+                        description: COUNT WHERE status = PENDING
+                      cancelledReservations:
+                        type: integer
+                        example: 12
+                        description: COUNT WHERE status = CANCELLED
+                      totalAmount:
+                        type: number
+                        format: decimal
+                        example: 42850.75
+                        description: SUM de RESERVATIONS.total_amount
+                  eventStatistics:
+                    type: object
+                    description: Depuis EVENTS
+                    properties:
+                      totalEvents:
+                        type: integer
+                        example: 45
+                        description: COUNT de EVENTS
+                      availableEvents:
+                        type: integer
+                        example: 38
+                        description: COUNT WHERE is_available = true
+                      unavailableEvents:
+                        type: integer
+                        example: 7
+                        description: COUNT WHERE is_available = false
+                  userStatistics:
+                    type: object
+                    description: Depuis USERS
+                    properties:
+                      totalUsers:
+                        type: integer
+                        example: 8932
+                        description: COUNT de USERS
+                      newUsers:
+                        type: integer
+                        example: 234
+                        description: COUNT WHERE created_at BETWEEN startDate AND endDate
+                      usersWithReservations:
+                        type: integer
+                        example: 1876
+                        description: COUNT DISTINCT de RESERVATIONS.user_id
+                  categoryBreakdown:
+                    type: array
+                    description: Depuis CATEGORIES avec JOIN
+                    items:
+                      type: object
+                      properties:
+                        categoryId:
+                          type: string
+                          format: uuid
+                          description: CATEGORIES.id
+                        categoryName:
+                          type: string
+                          example: Concert
+                          description: CATEGORIES.name
+                        eventsCount:
+                          type: integer
+                          example: 18
+                          description: COUNT de EVENTS WHERE category_id = CATEGORIES.id
+                        reservationsCount:
+                          type: integer
+                          example: 1250
+                          description: COUNT de RESERVATIONS pour ces événements
+                        totalRevenue:
+                          type: number
+                          format: decimal
+                          example: 15680.00
+                          description: SUM de RESERVATIONS.total_amount
+        '400':
+          description: Paramètres invalides
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+
+  /api/dashboard/search:
+    get:
+      tags:
+        - Dashboard Service
+      summary: Effectuer des recherches dans le dashboard
+      description: Recherche globale dans les événements, réservations et utilisateurs
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Terme de recherche
+          example: festival
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [EVENTS, RESERVATIONS, USERS, ALL]
+            default: ALL
+          description: Type de ressource à rechercher
+          example: EVENTS
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Nombre maximum de résultats par type
+          example: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Décalage pour la pagination
+          example: 0
+      responses:
+        '200':
+          description: Résultats de recherche
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  query:
+                    type: string
+                    example: festival
+                  type:
+                    type: string
+                    example: ALL
+                  totalResults:
+                    type: integer
+                    example: 47
+                  results:
+                    type: object
+                    properties:
+                      events:
+                        type: array
+                        description: Depuis EVENTS (WHERE title ILIKE query OR description ILIKE query)
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                              description: EVENTS.id
+                            title:
+                              type: string
+                              example: Summer Festival 2026
+                              description: EVENTS.title
+                            description:
+                              type: string
+                              example: Un festival incroyable
+                              description: EVENTS.description
+                            start_date:
+                              type: string
+                              format: date-time
+                              description: EVENTS.start_date
+                            end_date:
+                              type: string
+                              format: date-time
+                              description: EVENTS.end_date
+                            is_available:
+                              type: boolean
+                              description: EVENTS.is_available
+                            venue:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  format: uuid
+                                name:
+                                  type: string
+                                  example: Zénith de Paris
+                                capacity:
+                                  type: integer
+                                  example: 6000
+                            category:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  format: uuid
+                                name:
+                                  type: string
+                                  example: Concert
+                      reservations:
+                        type: array
+                        description: Depuis RESERVATIONS avec JOINs
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                              description: RESERVATIONS.id
+                            user_id:
+                              type: string
+                              format: uuid
+                              description: RESERVATIONS.user_id
+                            event_id:
+                              type: string
+                              format: uuid
+                              description: RESERVATIONS.event_id
+                            eventTitle:
+                              type: string
+                              example: Summer Festival 2026
+                              description: EVENTS.title (JOIN)
+                            userName:
+                              type: string
+                              example: Keyvan Nikazm
+                              description: USERS.first_name + USERS.last_name (JOIN)
+                            status:
+                              type: string
+                              example: CONFIRMED
+                              description: RESERVATIONS.status
+                            total_amount:
+                              type: number
+                              format: decimal
+                              example: 150.50
+                              description: RESERVATIONS.total_amount
+                            created_at:
+                              type: string
+                              format: date-time
+                              description: RESERVATIONS.created_at
+                      users:
+                        type: array
+                        description: Depuis USERS (WHERE first_name ILIKE query OR last_name ILIKE query OR email ILIKE query)
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                              description: USERS.id
+                            first_name:
+                              type: string
+                              example: Keyvan
+                              description: USERS.first_name
+                            last_name:
+                              type: string
+                              example: Nikazm
+                              description: USERS.last_name
+                            email:
+                              type: string
+                              example: keyvan.nikazm@gmail.com
+                              description: USERS.email
+                            phone:
+                              type: string
+                              example: 0471050505
+                              description: USERS.phone
+                            created_at:
+                              type: string
+                              format: date-time
+                              description: USERS.created_at
+                            totalReservations:
+                              type: integer
+                              example: 8
+                              description: COUNT de RESERVATIONS WHERE user_id = USERS.id
+        '400':
+          description: Query manquante ou invalide
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+
+  /api/dashboard/events:
+    get:
+      tags:
+        - Dashboard Service
+      summary: Liste des événements avec tri
+      description: Affiche la liste complète des événements avec options de tri et filtrage (depuis EVENTS)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [title, start_date, created_at]
+            default: start_date
+          description: Critère de tri (colonnes EVENTS)
+          example: start_date
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [ASC, DESC]
+            default: DESC
+          description: Ordre de tri
+          example: DESC
+        - name: is_available
+          in: query
+          schema:
+            type: boolean
+          description: Filtrer par disponibilité (EVENTS.is_available)
+          example: true
+        - name: category_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer par catégorie (EVENTS.category_id)
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        - name: venue_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer par salle (EVENTS.venue_id)
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filtrer les événements après cette date
+          example: 2025-12-01
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filtrer les événements avant cette date
+          example: 2026-12-31
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Numéro de page
+          example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+          description: Nombre d'éléments par page
+          example: 50
+      responses:
+        '200':
+          description: Liste des événements triée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalEvents:
+                    type: integer
+                    example: 156
+                  page:
+                    type: integer
+                    example: 1
+                  limit:
+                    type: integer
+                    example: 50
+                  totalPages:
+                    type: integer
+                    example: 4
+                  events:
+                    type: array
+                    description: Depuis EVENTS avec JOINs sur VENUES et CATEGORIES
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                          description: EVENTS.id
+                        title:
+                          type: string
+                          example: Summer Festival 2026
+                          description: EVENTS.title
+                        description:
+                          type: string
+                          example: Un festival incroyable
+                          description: EVENTS.description
+                        start_date:
+                          type: string
+                          format: date-time
+                          description: EVENTS.start_date
+                        end_date:
+                          type: string
+                          format: date-time
+                          description: EVENTS.end_date
+                        is_available:
+                          type: boolean
+                          description: EVENTS.is_available
+                        venue:
+                          type: object
+                          description: JOIN avec VENUES
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                              description: VENUES.id
+                            name:
+                              type: string
+                              example: Zénith de Paris
+                              description: VENUES.name
+                            capacity:
+                              type: integer
+                              example: 6000
+                              description: VENUES.capacity
+                            address:
+                              type: string
+                              example: 211 Avenue Jean Jaurès, 75019 Paris
+                              description: VENUES.address
+                        category:
+                          type: object
+                          description: JOIN avec CATEGORIES
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                              description: CATEGORIES.id
+                            name:
+                              type: string
+                              example: Concert
+                              description: CATEGORIES.name
+                        reservationsCount:
+                          type: integer
+                          example: 245
+                          description: COUNT de RESERVATIONS WHERE event_id = EVENTS.id
+                        totalRevenue:
+                          type: number
+                          format: decimal
+                          example: 18375.00
+                          description: SUM de RESERVATIONS.total_amount WHERE event_id = EVENTS.id
+                        seatsReserved:
+                          type: integer
+                          example: 245
+                          description: COUNT de RESERVED_SEATS pour cet événement
+                        occupancyRate:
+                          type: number
+                          format: float
+                          example: 81.25
+                          description: CALCUL (seatsReserved / VENUES.capacity * 100)
+        '400':
+          description: Paramètres de tri invalides
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+
+  /api/dashboard/reservations:
+    get:
+      tags:
+        - Dashboard Service
+      summary: Liste des réservations avec tri
+      description: Affiche la liste complète des réservations avec options de tri et filtrage (depuis RESERVATIONS)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [created_at, total_amount, status]
+            default: created_at
+          description: Critère de tri (colonnes RESERVATIONS)
+          example: total_amount
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [ASC, DESC]
+            default: DESC
+          description: Ordre de tri
+          example: DESC
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDING, CONFIRMED, CANCELLED]
+          description: Filtrer par statut (RESERVATIONS.status)
+          example: CONFIRMED
+        - name: event_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer par événement (RESERVATIONS.event_id)
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        - name: user_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer par utilisateur (RESERVATIONS.user_id)
+          example: user-uuid-123
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filtrer les réservations après cette date
+          example: 2025-01-01
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filtrer les réservations avant cette date
+          example: 2025-12-31
+        - name: minAmount
+          in: query
+          schema:
+            type: number
+            format: decimal
+          description: Montant minimum (RESERVATIONS.total_amount)
+          example: 50.00
+        - name: maxAmount
+          in: query
+          schema:
+            type: number
+            format: decimal
+          description: Montant maximum (RESERVATIONS.total_amount)
+          example: 500.00
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Numéro de page
+          example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+          description: Nombre d'éléments par page
+          example: 50
+      responses:
+        '200':
+          description: Liste des réservations triée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalReservations:
+                    type: integer
+                    example: 3428
+                  page:
+                    type: integer
+                    example: 1
+                  limit:
+                    type: integer
+                    example: 50
+                  totalPages:
+                    type: integer
+                    example: 69
+                  reservations:
+                    type: array
+                    description: Depuis RESERVATIONS avec JOINs
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                          description: RESERVATIONS.id
+                        user_id:
+                          type: string
+                          format: uuid
+                          description: RESERVATIONS.user_id
+                        event_id:
+                          type: string
+                          format: uuid
+                          description: RESERVATIONS.event_id
+                        status:
+                          type: string
+                          example: CONFIRMED
+                          description: RESERVATIONS.status
+                        total_amount:
+                          type: number
+                          format: decimal
+                          example: 150.50
+                          description: RESERVATIONS.total_amount
+                        created_at:
+                          type: string
+                          format: date-time
+                          description: RESERVATIONS.created_at
+                        user:
+                          type: object
+                          description: JOIN avec USERS
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            first_name:
+                              type: string
+                              example: Keyvan
+                            last_name:
+                              type: string
+                              example: Nikazm
+                            email:
+                              type: string
+                              example: keyvan.nikazm@gmail.com
+                        event:
+                          type: object
+                          description: JOIN avec EVENTS
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            title:
+                              type: string
+                              example: Summer Festival 2026
+                            start_date:
+                              type: string
+                              format: date-time
+                        reserved_seats:
+                          type: array
+                          description: JOIN avec RESERVED_SEATS
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                format: uuid
+                                description: RESERVED_SEATS.id
+                              seat_type:
+                                type: string
+                                example: VIP
+                                description: RESERVED_SEATS.seat_type
+                              seat_number:
+                                type: string
+                                nullable: true
+                                example: A12
+                                description: RESERVED_SEATS.seat_number
+        '400':
+          description: Paramètres de tri invalides
+        '401':
+          description: Non autorisé - Token manquant ou invalide
+
+
 components:
   securitySchemes:
     bearerAuth:
