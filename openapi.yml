@@ -96,9 +96,9 @@ paths:
                 type: object
                 properties:
                   id:
-                    type: integer
-                    example: 1
-                  firstName:
+                    type: string
+                    format: uuid
+                    example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"               firstName:
                     type: string
                     example: Keyvan
                   lastName:
@@ -178,9 +178,9 @@ paths:
                     type: object
                     properties:
                       id:
-                        type: integer
-                        example: 1
-                      firstName:
+                        type: string
+                        format: uuid
+                        example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"               firstName:
                         type: string
                         example: Keyvan
                       lastName:
@@ -228,9 +228,9 @@ paths:
                 type: object
                 properties:
                   id:
-                    type: integer
-                    example: 1
-                  firstName:
+                    type: string
+                    format: uuid
+                    example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"               firstName:
                     type: string
                     example: Keyvan
                   lastName:
@@ -243,9 +243,9 @@ paths:
                     type: object
                     properties:
                       id:
-                        type: integer
-                        example: 1
-                      street:
+                        type: string
+                        format: uuid
+                        example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"               street:
                         type: string
                         example: "Rue de la Loi 16"
                       city:
@@ -312,9 +312,9 @@ paths:
                 type: object
                 properties:
                   id:
-                    type: integer
-                    example: 1
-                  firstName:
+                    type: string
+                    format: uuid
+                    example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"               firstName:
                     type: string
                     example: Keyvan
                   lastName:
@@ -333,9 +333,9 @@ paths:
                     type: object
                     properties:
                       id:
-                        type: integer
-                        example: 1
-                      street:
+                        type: string
+                        format: uuid
+                        example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"               street:
                         type: string
                         example: "Avenue Louise 50"
                       city:
